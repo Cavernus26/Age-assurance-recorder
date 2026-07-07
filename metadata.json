@@ -1,0 +1,6 @@
+{
+  "name": "StoreKit Age Assurance Sandbox Companion",
+  "description": "An interactive companion for Apple StoreKit Age Assurance testing, scenario mapping, automated Maestro/XCTest script generation, screen recording capture, and compliance reporting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
