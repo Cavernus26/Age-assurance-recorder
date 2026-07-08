@@ -12,6 +12,12 @@ export interface TestScenario {
   videoName?: string;
   videoBlob?: Blob;
   lastTested?: string;
+  minAge?: string;
+  maxAge?: string;
+  verificationType?: string;
+  significantChange?: string;
+  decision?: string;
+  consentRevoked?: boolean;
 }
 
 export interface AutomationConfig {

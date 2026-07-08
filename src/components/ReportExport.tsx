@@ -158,7 +158,7 @@ export default function ReportExport({ scenarios, config, onChangeConfig }: Repo
           </h4>
           <p className="text-[11px] text-slate-300 max-w-xl leading-relaxed">
             {passed === total 
-              ? "🎉 Outstanding! All 5 regulatory Age Assurance testing conditions are verified and passing with fully-documented, custom-named video logs ready for App Store Review compliance." 
+              ? `🎉 Outstanding! All ${total} regulatory Age Assurance testing conditions are verified and passing with fully-documented, custom-named video logs ready for App Store Review compliance.` 
               : `⚠️ Compliance status pending. Currently ${passed} of ${total} scenarios have been verified. Ensure all cases are thoroughly simulated and video proof is cataloged.`}
           </p>
         </div>
