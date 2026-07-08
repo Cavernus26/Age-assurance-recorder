@@ -37,7 +37,7 @@ export default function App() {
   const [checklistProgress, setChecklistProgress] = useState<Record<string, boolean>>({});
 
   // Script tab state
-  const [activeScriptTab, setActiveScriptTab] = useState<'maestro' | 'bash' | 'xctest'>('maestro');
+  const [activeScriptTab, setActiveScriptTab] = useState<'maestro' | 'bash' | 'xctest' | 'windows'>('windows');
   const [scriptCopied, setScriptCopied] = useState(false);
 
   // Setup help drawer state
@@ -277,6 +277,40 @@ export default function App() {
   const dateString = new Date().toISOString().split('T')[0];
 
   const scripts = {
+    windows: `# -----------------------------------------------------------------------------
+# Windows PowerShell iOS Launch Automator (requires USB connected iPhone)
+# Scenario: ${activeScenario.id}
+# -----------------------------------------------------------------------------
+
+# Config
+$BundleId = "${config.bundleId}"
+$Scenario = "${activeScenario.id}"
+$DeepLink = "${config.deepLink}?scenario=$Scenario"
+
+Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host "🚀 Physical iPhone Automator (Windows)" -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host "📱 Launching scenario deep link:" -ForegroundColor Yellow
+Write-Host "   $DeepLink" -ForegroundColor Yellow
+
+# Use go-ios to interact with USB connected device
+$GoIosPath = Join-Path $env:TEMP "go-ios.exe"
+if (-not (Test-Path $GoIosPath)) {
+    Write-Host "📥 downloading go-ios for Windows..." -ForegroundColor DarkGray
+    Invoke-WebRequest -Uri "https://github.com/danielpaulus/go-ios/releases/latest/download/go-ios-windows-zip" -OutFile "$env:TEMP\\go-ios.zip"
+    Expand-Archive -Path "$env:TEMP\\go-ios.zip" -DestinationPath "$env:TEMP\\go-ios-extracted" -Force
+    Move-Item -Path "$env:TEMP\\go-ios-extracted\\ios.exe" -Destination $GoIosPath -Force
+}
+
+Write-Host "🔍 Searching for connected iPhone..." -ForegroundColor DarkGray
+& $GoIosPath list
+
+Write-Host "👉 Sending Open URL command..." -ForegroundColor Green
+& $GoIosPath developer open-url "$DeepLink"
+
+Write-Host "✅ Game launched with compliance state: $Scenario!" -ForegroundColor Green
+`,
+
     maestro: `appId: "${config.bundleId}"
 ---
 # -----------------------------------------------------------------------------
@@ -743,6 +777,72 @@ class StoreKitAgeAssuranceTests: XCTestCase {
               </div>
             </div>
 
+            {/* Windows & Connected Physical iPhone Assistant Card */}
+            <div className="bg-slate-900 text-white rounded-xl border border-slate-800 p-4 text-left space-y-3 shadow-md">
+              <div className="flex items-center gap-2">
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                </span>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-blue-400">Windows & Physical iPhone Setup</h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                {/* Steps Description */}
+                <div className="md:col-span-8 space-y-2.5">
+                  <div className="space-y-1">
+                    <h4 className="text-[11px] font-semibold text-slate-200">1. Mirror Screen to Windows PC (Choose Free App)</h4>
+                    <p className="text-[10px] text-slate-400 leading-normal">
+                      Use a free AirPlay receiver on your PC, then open your iPhone <strong>Control Center</strong>, tap <strong>Screen Mirroring</strong>, and select your PC:
+                    </p>
+                    <ul className="list-disc pl-4 text-[9.5px] text-slate-300 space-y-0.5">
+                      <li><strong>Let'sView (100% Free)</strong>: Download from the Microsoft Store or <a href="https://letsview.com/" target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">letsview.com</a>.</li>
+                      <li><strong>LonelyScreen (Free)</strong>: Download from <a href="https://www.lonelyscreen.com/" target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">lonelyscreen.com</a>.</li>
+                      <li><strong>AirServer (Trial)</strong>: Install via Microsoft Store or run: <code className="bg-slate-950 px-1 py-0.5 rounded text-slate-300 font-mono text-[8px]">winget install AppSelf.AirServer</code></li>
+                    </ul>
+                  </div>
+
+                  <div className="space-y-1">
+                    <h4 className="text-[11px] font-semibold text-slate-200">2. Launch Game with Active Scenario</h4>
+                    <p className="text-[10px] text-slate-400 leading-normal">
+                      Launch the app on your connected device using the PowerShell script (on the right) or use the instant triggers:
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <a
+                      href={`${config.deepLink}?scenario=${activeScenario.id}`}
+                      className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] rounded transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <Play className="w-3 h-3" />
+                      Launch directly on iPhone
+                    </a>
+                    
+                    <button
+                      onClick={() => handleCopyScript(`${config.deepLink}?scenario=${activeScenario.id}`)}
+                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-bold text-[10px] rounded transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" />
+                      Copy Deep Link
+                    </button>
+                  </div>
+                </div>
+
+                {/* Live QR Code Generator */}
+                <div className="md:col-span-4 flex flex-col items-center justify-center p-2 bg-white rounded-lg border border-slate-800 shrink-0">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(`${config.deepLink}?scenario=${activeScenario.id}`)}`}
+                    alt="Scan to launch deep link"
+                    className="w-[110px] h-[110px] object-contain rounded"
+                    referrerPolicy="no-referrer"
+                  />
+                  <span className="text-[8px] font-mono font-bold text-slate-500 uppercase mt-1.5 tracking-wider text-center">
+                    Scan with Camera
+                  </span>
+                </div>
+              </div>
+            </div>
+
             {/* Recording Workspace Canvas */}
             <div className="border border-slate-200/80 rounded-xl bg-slate-50/40 p-5 flex flex-col items-center justify-center min-h-[220px] relative overflow-hidden">
               
@@ -924,8 +1024,8 @@ class StoreKitAgeAssuranceTests: XCTestCase {
             </div>
             
             {/* Simple tab buttons */}
-            <div className="grid grid-cols-3 bg-slate-100 p-1 rounded-lg">
-              {(['maestro', 'bash', 'xctest'] as const).map((tab) => (
+            <div className="grid grid-cols-4 bg-slate-100 p-1 rounded-lg">
+              {(['windows', 'maestro', 'bash', 'xctest'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveScriptTab(tab)}
@@ -946,6 +1046,7 @@ class StoreKitAgeAssuranceTests: XCTestCase {
             
             {/* Brief active tab description */}
             <div className="p-2.5 bg-blue-50/20 border border-blue-100/30 rounded-lg text-[10px] text-slate-600 leading-relaxed shrink-0">
+              {activeScriptTab === 'windows' && "PowerShell script to download go-ios and instantly trigger the deep link over USB on Windows."}
               {activeScriptTab === 'maestro' && "Maestro triggers the native sandbox sheet and captures screenshots programmatically."}
               {activeScriptTab === 'bash' && "Bash utility spins up simctl background video capturing on physical and booted devices."}
               {activeScriptTab === 'xctest' && "Native iOS XCTest UI Automation. Asserts the StoreKit layout and stores success logs."}
@@ -957,7 +1058,7 @@ class StoreKitAgeAssuranceTests: XCTestCase {
               {/* Code header */}
               <div className="bg-slate-950 px-3 py-1.5 border-b border-slate-800/80 flex items-center justify-between shrink-0">
                 <span className="text-[9px] font-mono text-slate-500">
-                  {activeScriptTab === 'maestro' ? 'maestro_test.yml' : activeScriptTab === 'bash' ? 'capture_proof.sh' : 'StoreKitTests.swift'}
+                  {activeScriptTab === 'windows' ? 'launch_scenario.ps1' : activeScriptTab === 'maestro' ? 'maestro_test.yml' : activeScriptTab === 'bash' ? 'capture_proof.sh' : 'StoreKitTests.swift'}
                 </span>
                 
                 <button
